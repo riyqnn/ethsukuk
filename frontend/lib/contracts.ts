@@ -39,7 +39,8 @@ function useMinedWrite() {
           : params) as typeof params,
         options,
       );
-      const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+      // Keep polling through RPC lag instead of giving up after viem's default few retries.
+      const receipt = await publicClient?.waitForTransactionReceipt({ hash, retryCount: 30, timeout: 180_000 });
       if (receipt?.status === "reverted") throw new Error("Transaction reverted on-chain.");
       await queryClient.invalidateQueries();
       return hash;

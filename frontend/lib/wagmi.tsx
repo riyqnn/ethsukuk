@@ -39,7 +39,9 @@ export const wagmiConfig = createConfig({
   connectors,
   chains: [sepolia],
   transports: {
-    [sepolia.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL),
+    // viem's default Sepolia RPC is load-balanced and often lags its own receipts, so a mined
+    // transaction can read as "not found". PublicNode answers consistently.
+    [sepolia.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com"),
   },
   ssr: true,
 });
