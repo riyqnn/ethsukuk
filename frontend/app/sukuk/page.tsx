@@ -58,6 +58,21 @@ export default function SukukPage() {
   const busy = tx.status === "approving" || tx.status === "awaiting_signature";
   const parsed = parseTokenAmount(amount);
 
+  // Mirror the contract's deposit checks so a doomed subscription never reaches the wallet.
+  const quotaLeft = terms.quota > issue.principal ? terms.quota - issue.principal : 0n;
+  const fillable = me.idrxBalance < quotaLeft ? me.idrxBalance : quotaLeft;
+  const maxSubscribe = terms.denomination > 0n ? (fillable / terms.denomination) * terms.denomination : fillable;
+  const subscribeProblem =
+    parsed === 0n
+      ? ""
+      : parsed > me.idrxBalance
+        ? "More than the IDRX in this wallet."
+        : parsed > quotaLeft
+          ? `Only ${formatIDRX(quotaLeft)} IDRX of the quota is left.`
+          : terms.denomination > 0n && parsed % terms.denomination !== 0n
+            ? `Must be a multiple of ${formatIDRX(terms.denomination)} IDRX.`
+            : "";
+
   async function run(fn: () => Promise<`0x${string}`>, approveFirst?: bigint) {
     try {
       tx.setError("");
@@ -287,7 +302,7 @@ export default function SukukPage() {
                       {...fade}
                       onSubmit={(e) => {
                         e.preventDefault();
-                        if (parsed > 0n && address) run(() => actions.deposit(parsed, address), parsed);
+                        if (parsed > 0n && !subscribeProblem && address) run(() => actions.deposit(parsed, address), parsed);
                       }}
                       className="space-y-5"
                     >
@@ -304,14 +319,20 @@ export default function SukukPage() {
                             value={amount}
                             onChange={setAmount}
                             hint={`Wallet ${formatIDRX(me.idrxBalance)} IDRX`}
-                            onFill={() => setAmount(formatTokenAmount(me.idrxBalance))}
+                            onFill={() => setAmount(formatTokenAmount(maxSubscribe))}
                           />
-                          <p className="rounded-xl bg-mist px-4 py-3 text-[13px] text-muted-foreground">
-                            Multiples of <span className="figure text-ink">{formatIDRX(terms.denomination)} IDRX</span> only.
-                            You receive <span className="figure text-ink">{formatIDRX(parsed)}</span> certificates, one per IDRX.
-                          </p>
+                          {subscribeProblem ? (
+                            <p role="alert" className="rounded-xl bg-amber-soft px-4 py-3 text-[13px] font-medium text-amber">
+                              {subscribeProblem}
+                            </p>
+                          ) : (
+                            <p className="rounded-xl bg-mist px-4 py-3 text-[13px] text-muted-foreground">
+                              Multiples of <span className="figure text-ink">{formatIDRX(terms.denomination)} IDRX</span> only.
+                              You receive <span className="figure text-ink">{formatIDRX(parsed)}</span> certificates, one per IDRX.
+                            </p>
+                          )}
                           <Press className="w-full">
-                            <button type="submit" disabled={parsed <= 0n || busy} className="btn btn-primary w-full">
+                            <button type="submit" disabled={parsed <= 0n || !!subscribeProblem || busy} className="btn btn-primary w-full">
                               {busy ? "Waiting for wallet…" : "Subscribe"}
                             </button>
                           </Press>

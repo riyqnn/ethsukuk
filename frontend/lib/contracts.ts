@@ -2,10 +2,12 @@
 
 import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
+import { BaseError, ContractFunctionRevertedError } from "viem";
+import { useAccount, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { ADDRESSES, CONTRACTS } from "@/contracts/addresses";
 import { CERTIFICATE_ABI, IDRX_ABI, REGISTRY_ABI, SAFE_ABI } from "@/contracts/abis";
+import { formatIDRX } from "@/lib/formatters";
 
 const chainId = sepolia.id;
 const certificate = { address: CONTRACTS.certificate, abi: CERTIFICATE_ABI, chainId } as const;
@@ -16,6 +18,34 @@ const idrx = { address: CONTRACTS.idrx, abi: IDRX_ABI, chainId } as const;
 /*  Mined writes                                                              */
 /* -------------------------------------------------------------------------- */
 
+/** Plain-language reason for a contract revert, from the custom error the simulation decoded. */
+function revertReason(e: unknown): string {
+  const err = e instanceof BaseError ? e.walk((x) => x instanceof ContractFunctionRevertedError) : null;
+  if (!(err instanceof ContractFunctionRevertedError) || !err.data) {
+    return e instanceof BaseError ? e.shortMessage : "The contract rejected this transaction.";
+  }
+  const [a] = (err.data.args ?? []) as unknown[];
+  const amount = typeof a === "bigint" ? `${formatIDRX(a)} IDRX` : "";
+  const messages: Record<string, string> = {
+    QuotaExceeded: `Only ${amount} of the quota is left.`,
+    NotDenominationMultiple: `Amount must be a multiple of ${amount}.`,
+    NotVerified: "This wallet has not completed KYC yet.",
+    WalletFrozen: "This wallet is frozen by the compliance agent.",
+    WrongPhase: "Not allowed in the issue's current phase.",
+    ZeroAmount: "Enter an amount above zero.",
+    CouponTooEarly: "The next profit period is not due yet.",
+    NotMatured: "The issue has not reached maturity yet.",
+    TreasuryOutstanding: `${amount} of principal is still at the project.`,
+    InsufficientTreasuryBalance: `The treasury only holds ${amount}.`,
+    InsufficientUnfrozen: `Only ${amount} of this balance is unfrozen.`,
+    ExceedsClaimable: `Only ${amount} is claimable.`,
+    NoClaimableRequest: "There is no settled request to claim yet.",
+    AlreadyRegistered: "This wallet has already completed KYC.",
+    ERC20InsufficientBalance: "Not enough IDRX in this wallet.",
+  };
+  return messages[err.data.errorName] ?? `Rejected by the contract: ${err.data.errorName}.`;
+}
+
 /**
  * Like wagmi's `writeContractAsync`, but resolves only once the transaction is mined, and rejects
  * if it reverted. Needed so `approve` -> `deposit` sequences do not race the allowance, and so the
@@ -24,10 +54,20 @@ const idrx = { address: CONTRACTS.idrx, abi: IDRX_ABI, chainId } as const;
 function useMinedWrite() {
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient({ chainId });
+  const { address: account } = useAccount();
   const queryClient = useQueryClient();
 
   const write = useCallback(
     async (...[params, options]: Parameters<typeof writeContractAsync>): Promise<`0x${string}`> => {
+      // Simulate first: a call that would revert fails here with its reason, before the wallet
+      // asks for a signature and before any gas is spent.
+      if (publicClient && account) {
+        try {
+          await publicClient.simulateContract({ ...params, account } as Parameters<typeof publicClient.simulateContract>[0]);
+        } catch (e) {
+          throw new Error(revertReason(e));
+        }
+      }
       // Wallets' "market" estimate on Sepolia runs far above what blocks need; suggest the node's
       // own fees instead, floored at 0.01 gwei so the transaction never stalls.
       const fees = await publicClient?.estimateFeesPerGas().catch(() => undefined);
@@ -45,7 +85,7 @@ function useMinedWrite() {
       await queryClient.invalidateQueries();
       return hash;
     },
-    [writeContractAsync, publicClient, queryClient],
+    [writeContractAsync, publicClient, account, queryClient],
   );
 
   return write;
