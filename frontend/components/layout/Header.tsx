@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useAccount, useDisconnect } from "wagmi";
-import { ChevronDown, Copy, ExternalLink, Menu, X } from "lucide-react";
+import { ChevronDown, Copy, ExternalLink, Menu, ShieldCheck, X } from "lucide-react";
 import { compactAddress } from "@/lib/formatters";
-import { useHasRole } from "@/lib/contracts";
+import { useComplianceLookup, useHasRole, useInvestorActions } from "@/lib/contracts";
 import { WalletConnect } from "@/components/wallet/WalletConnect";
 import { ScrollProgressBar, EASE } from "@/components/ui/motion";
 
@@ -39,6 +39,10 @@ export function Header() {
   const { data: hasAgentRole } = useHasRole("AGENT_ROLE", address);
   const isAdmin = isConnected && !!hasProtocolRole;
   const isAgent = isConnected && !!hasAgentRole;
+  const kyc = useComplianceLookup(isConnected ? address : undefined);
+  const { selfRegister } = useInvestorActions();
+  const [kycState, setKycState] = useState<"idle" | "busy" | "failed">("idle");
+  const needsKyc = isConnected && kyc.valid && !kyc.isLoading && !kyc.registered;
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -125,6 +129,26 @@ export function Header() {
               <span className="h-1.5 w-1.5 rounded-full bg-mint-3" aria-hidden="true" />
               Sepolia
             </span>
+
+            {needsKyc && (
+              <button
+                type="button"
+                disabled={kycState === "busy"}
+                onClick={async () => {
+                  setKycState("busy");
+                  try {
+                    await selfRegister();
+                    setKycState("idle");
+                  } catch {
+                    setKycState("failed");
+                  }
+                }}
+                className="btn btn-primary btn-sm"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                {kycState === "busy" ? "Confirm in wallet…" : kycState === "failed" ? "Retry KYC" : "Complete KYC"}
+              </button>
+            )}
 
             {isConnected ? (
               <div className="relative" ref={menuRef}>

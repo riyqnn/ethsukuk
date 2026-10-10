@@ -1,8 +1,7 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { usePublicClient, useWatchContractEvent } from "wagmi";
-import { sepolia } from "wagmi/chains";
+import { useQuery } from "@tanstack/react-query";
+import { parseEventLogs, type Hex } from "viem";
 import { CONTRACTS, DEPLOY_BLOCK } from "@/contracts/addresses";
 import { CERTIFICATE_ABI } from "@/contracts/abis";
 
@@ -59,7 +58,12 @@ const KINDS: readonly string[] = [
   "Unpaused",
 ];
 
-const LOG_RANGE = 50_000n; // stay under public-RPC getLogs limits
+/**
+ * Blockscout indexes Sepolia, so the whole history is one request with timestamps included,
+ * instead of chunked eth_getLogs plus a getBlock per event against a public RPC that prunes old logs.
+ * No API key, CORS open.
+ */
+const INDEXER = "https://eth-sepolia.blockscout.com/api";
 const KEY = ["certificate-activity", CONTRACTS.certificate] as const;
 
 type Args = Record<string, unknown>;
@@ -72,7 +76,7 @@ function toItem(
     blockNumber: bigint;
     logIndex: number;
   },
-  timestamps: Map<bigint, number>,
+  timestamp: number,
 ): ActivityItem | null {
   const kind = log.eventName;
   if (!kind || !KINDS.includes(kind)) return null;
@@ -83,7 +87,7 @@ function toItem(
     kind: kind as ActivityKind,
     txHash: log.transactionHash,
     blockNumber: log.blockNumber,
-    timestamp: timestamps.get(log.blockNumber) ?? 0,
+    timestamp,
   };
 
   switch (kind) {
@@ -121,50 +125,46 @@ function toItem(
   }
 }
 
-/** Every certificate event, newest first, read straight from Sepolia logs. */
+interface IndexedLog {
+  topics: (Hex | null)[];
+  data: Hex;
+  blockNumber: Hex;
+  timeStamp: Hex;
+  logIndex: Hex;
+  transactionHash: Hex;
+  transactionIndex: Hex;
+}
+
+/** Every certificate event, newest first, from the Blockscout indexer. */
 export function useVaultActivity() {
-  const client = usePublicClient({ chainId: sepolia.id });
-  const queryClient = useQueryClient();
-
-  // A new event on the certificate refetches at once; the interval is the fallback.
-  useWatchContractEvent({
-    address: CONTRACTS.certificate,
-    abi: CERTIFICATE_ABI,
-    chainId: sepolia.id,
-    onLogs: () => queryClient.invalidateQueries({ queryKey: KEY }),
-  });
-
   return useQuery({
     queryKey: KEY,
-    enabled: !!client,
-    refetchInterval: 30_000,
+    refetchInterval: 15_000,
     queryFn: async (): Promise<ActivityItem[]> => {
-      if (!client) return [];
-      const latest = await client.getBlockNumber();
-      const logs = [];
-      for (let from = DEPLOY_BLOCK; from <= latest; from += LOG_RANGE) {
-        const to = from + LOG_RANGE - 1n < latest ? from + LOG_RANGE - 1n : latest;
-        logs.push(
-          ...(await client.getContractEvents({
-            address: CONTRACTS.certificate,
-            abi: CERTIFICATE_ABI,
-            fromBlock: from,
-            toBlock: to,
-          })),
-        );
-      }
+      // ponytail: one page caps at 1,000 logs; paginate with `page`/`offset` if the issue outgrows it.
+      const url = `${INDEXER}?module=logs&action=getLogs&address=${CONTRACTS.certificate}&fromBlock=${DEPLOY_BLOCK}&toBlock=latest`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Indexer responded ${res.status}`);
+      const body: { status: string; message: string; result: IndexedLog[] | string } = await res.json();
+      // "No logs found" comes back as status 0 with an empty result.
+      if (!Array.isArray(body.result)) throw new Error(`Indexer: ${body.message}`);
 
-      const blocks = [...new Set(logs.map((l) => l.blockNumber))];
-      const timestamps = new Map<bigint, number>();
-      await Promise.all(
-        blocks.map(async (blockNumber) => {
-          const block = await client.getBlock({ blockNumber });
-          timestamps.set(blockNumber, Number(block.timestamp));
-        }),
-      );
+      const raw = body.result.map((l) => ({
+        address: CONTRACTS.certificate,
+        topics: l.topics.filter((t): t is Hex => t !== null) as [Hex, ...Hex[]],
+        data: l.data,
+        blockNumber: BigInt(l.blockNumber),
+        logIndex: Number(l.logIndex),
+        transactionHash: l.transactionHash,
+        transactionIndex: Number(l.transactionIndex),
+        blockHash: null,
+        removed: false,
+        timestamp: Number(l.timeStamp),
+      }));
+      const time = new Map(raw.map((l) => [`${l.transactionHash}-${l.logIndex}`, l.timestamp]));
 
-      return logs
-        .map((l) => toItem(l, timestamps))
+      return parseEventLogs({ abi: CERTIFICATE_ABI, logs: raw })
+        .map((l) => toItem(l, time.get(`${l.transactionHash}-${l.logIndex}`) ?? 0))
         .filter((i): i is ActivityItem => i !== null)
         .sort((x, y) => (y.blockNumber === x.blockNumber ? 0 : y.blockNumber > x.blockNumber ? 1 : -1));
     },

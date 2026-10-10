@@ -40,9 +40,6 @@ const PHASES = [
 
 type Tab = "subscribe" | "coupon" | "redeem";
 
-/** ISO-3166 numeric code recorded for self-registered wallets. */
-const INDONESIA = 360;
-
 export default function SukukPage() {
   const { address, isConnected } = useAccount();
   const issue = useIssue();
@@ -271,7 +268,7 @@ export default function SukukPage() {
                         <button
                           type="button"
                           disabled={busy}
-                          onClick={() => run(() => actions.selfRegister(INDONESIA))}
+                          onClick={() => run(() => actions.selfRegister())}
                           className="btn btn-primary w-full"
                         >
                           {busy ? "Waiting for wallet…" : "Complete KYC"}

@@ -203,11 +203,14 @@ export function useInvestorCount() {
 /*  Writes                                                                    */
 /* -------------------------------------------------------------------------- */
 
+/** ISO-3166 numeric code recorded for self-registered wallets (Indonesia). */
+const SELF_KYC_COUNTRY = 360;
+
 /** Investor actions: subscribe, claim profit, request and claim redemption. */
 export function useInvestorActions() {
   const write = useMinedWrite();
   return {
-    selfRegister: (country: number) => write({ ...registry, functionName: "selfRegister", args: [country] }),
+    selfRegister: () => write({ ...registry, functionName: "selfRegister", args: [SELF_KYC_COUNTRY] }),
     approveIDRX: (amount: bigint) =>
       write({ ...idrx, functionName: "approve", args: [CONTRACTS.certificate, amount] }),
     deposit: (assets: bigint, receiver: `0x${string}`) =>
