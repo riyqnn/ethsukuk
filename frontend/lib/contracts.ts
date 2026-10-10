@@ -27,8 +27,18 @@ function useMinedWrite() {
   const queryClient = useQueryClient();
 
   const write = useCallback(
-    async (...args: Parameters<typeof writeContractAsync>): Promise<`0x${string}`> => {
-      const hash = await writeContractAsync(...args);
+    async (...[params, options]: Parameters<typeof writeContractAsync>): Promise<`0x${string}`> => {
+      // Wallets' "market" estimate on Sepolia runs far above what blocks need; suggest the node's
+      // own fees instead, floored at 0.01 gwei so the transaction never stalls.
+      const fees = await publicClient?.estimateFeesPerGas().catch(() => undefined);
+      const floor = 10_000_000n;
+      const tip = fees ? (fees.maxPriorityFeePerGas > floor ? fees.maxPriorityFeePerGas : floor) : undefined;
+      const hash = await writeContractAsync(
+        (fees && tip
+          ? { ...params, maxPriorityFeePerGas: tip, maxFeePerGas: fees.maxFeePerGas + tip }
+          : params) as typeof params,
+        options,
+      );
       const receipt = await publicClient?.waitForTransactionReceipt({ hash });
       if (receipt?.status === "reverted") throw new Error("Transaction reverted on-chain.");
       await queryClient.invalidateQueries();
