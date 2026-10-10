@@ -30,6 +30,7 @@ async function deployFixture() {
     auditor.address,
     treasury.address,
     await registry.getAddress(),
+    365 * 24 * 60 * 60,
   );
 
   for (const who of [alice, bob]) {

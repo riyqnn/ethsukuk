@@ -202,12 +202,17 @@ Open [http://localhost:3000](http://localhost:3000). After a fresh deployment, u
 
 ## Deployed Contracts (Sepolia)
 
+All contracts are source-verified on Etherscan.
+
 | Contract | Address |
 |---|---|
-| SukukCertificate | [`0x23649979067622de18B47bcE250864865fFb7296`](https://sepolia.etherscan.io/address/0x23649979067622de18B47bcE250864865fFb7296) |
-| InvestorRegistry | [`0x27739678f24307Cf9fD47EE1239A5A3fEd9381f3`](https://sepolia.etherscan.io/address/0x27739678f24307Cf9fD47EE1239A5A3fEd9381f3) |
-| MockIDRX | [`0x26071A9337090447C167A68A6a28057Eb1eDD570`](https://sepolia.etherscan.io/address/0x26071A9337090447C167A68A6a28057Eb1eDD570) |
+| SukukCertificate | [`0x185e3524Ea9A638122a7d3A6104aCD9112Fce3F7`](https://sepolia.etherscan.io/address/0x185e3524Ea9A638122a7d3A6104aCD9112Fce3F7#code) |
+| InvestorRegistry | [`0x016160DE3042C61Db79f1A8af9b317689289fD5b`](https://sepolia.etherscan.io/address/0x016160DE3042C61Db79f1A8af9b317689289fD5b#code) |
+| MockIDRX | [`0x6D5f64e820Dd2342F1D08aF439A2902793869e74`](https://sepolia.etherscan.io/address/0x6D5f64e820Dd2342F1D08aF439A2902793869e74#code) |
 | Auditor / Treasury Safe | [`0x411E4A576d3cA579e8795559875D1F0684452801`](https://sepolia.etherscan.io/address/0x411E4A576d3cA579e8795559875D1F0684452801) |
+
+Testnet terms: a 30-minute tenor stands in for 3 years (`YEAR_SECONDS=600`), with profit every
+5 minutes at 12% a year, so each period pays 6% of principal and the whole lifecycle fits in one session.
 
 ## Security
 

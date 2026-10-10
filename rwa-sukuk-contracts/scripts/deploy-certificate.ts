@@ -31,6 +31,8 @@ async function main() {
   const tenor = Number(process.env.TENOR_SECONDS ?? 3 * 365 * DAY);
   const couponRate = Number(process.env.COUPON_RATE_BPS ?? 1200);
   const couponInterval = Number(process.env.COUPON_INTERVAL_SECONDS ?? 90 * DAY);
+  // Compress the rate's year along with the tenor on a testnet, or profit per period rounds to zero.
+  const yearLength = Number(process.env.YEAR_SECONDS ?? 365 * DAY);
   const isin = process.env.ISSUE_ISIN ?? "";
 
   console.log(`\n=== Sukuk certificate suite -> ${network.name} ===`);
@@ -76,6 +78,7 @@ async function main() {
     auditorSafe,
     treasurySafe,
     registryAddress,
+    yearLength,
   );
   await cert.waitForDeployment();
   const certAddress = await cert.getAddress();
@@ -103,6 +106,7 @@ async function main() {
       tenorSeconds: tenor,
       couponRateBps: couponRate,
       couponIntervalSeconds: couponInterval,
+      yearSeconds: yearLength,
     },
   };
 

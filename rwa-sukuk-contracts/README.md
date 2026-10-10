@@ -105,12 +105,14 @@ testnet so the whole lifecycle can be walked through in one session.
 
 ### Constructor arguments
 
-`SukukCertificate(underlying, name, symbol, isin, admin, auditorSafe, treasurySafe, registry)`
+`SukukCertificate(underlying, name, symbol, isin, admin, auditorSafe, treasurySafe, registry, yearLength)`
 
 - `admin` receives `DEFAULT_ADMIN_ROLE`, `PROTOCOL_ROLE` and `AGENT_ROLE`.
 - `auditorSafe` receives `AUDITOR_ROLE`, which only it can hand on.
 - `treasurySafe` custodies the deployed principal.
 - `registry` is the `InvestorRegistry` consulted on every transfer.
+- `yearLength` is the seconds the annual profit rate is spread over: `365 days` in production.
+  On a testnet set `YEAR_SECONDS` to compress it with the tenor, or profit per period rounds to zero.
 
 ## Networks
 

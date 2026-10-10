@@ -64,7 +64,10 @@ contract SukukCertificate is
     /// @dev Fixed-point scale for the per-share profit accumulator.
     uint256 private constant ACC_PRECISION = 1e18;
     uint256 private constant BPS = 10_000;
-    uint256 private constant YEAR = 365 days;
+
+    /// @notice Seconds the annual profit rate is spread over: 365 days in production. A testnet
+    ///         compresses it along with the tenor so profit per period stays realistic.
+    uint256 public immutable yearLength;
 
     // ERC-165 identifiers defined by ERC-7540 and ERC-7575.
     bytes4 private constant IID_7540_OPERATOR = 0xe3bc4e65;
@@ -177,6 +180,7 @@ contract SukukCertificate is
      * @param auditorSafe_ Gnosis Safe granted AUDITOR_ROLE.
      * @param treasury_   Gnosis Safe that holds the deployed principal.
      * @param registry_   KYC registry consulted on every transfer.
+     * @param yearLength_ Seconds in one profit-rate year (365 days in production).
      */
     constructor(
         IERC20 underlying_,
@@ -186,12 +190,15 @@ contract SukukCertificate is
         address admin_,
         address auditorSafe_,
         address treasury_,
-        IInvestorRegistry registry_
+        IInvestorRegistry registry_,
+        uint256 yearLength_
     ) ERC20(name_, symbol_) ERC4626(underlying_) {
         if (address(underlying_).code.length == 0) revert ZeroAddress();
         if (admin_ == address(0) || auditorSafe_ == address(0)) revert ZeroAddress();
         if (treasury_ == address(0) || address(registry_) == address(0)) revert ZeroAddress();
+        if (yearLength_ == 0) revert ZeroAmount();
 
+        yearLength = yearLength_;
         isin = isin_;
         treasury = treasury_;
         registry = registry_;
@@ -391,7 +398,7 @@ contract SukukCertificate is
 
     /// @notice Profit one period should pay at the stated rate, for comparison with what was funded.
     function expectedCouponAmount() public view returns (uint256) {
-        return _principal.mulDiv(terms.couponRate * terms.couponInterval, BPS * YEAR);
+        return _principal.mulDiv(terms.couponRate * terms.couponInterval, BPS * yearLength);
     }
 
     /// @notice Timestamp the next profit payment is due. Zero before the issue is active.
@@ -715,7 +722,7 @@ contract SukukCertificate is
     }
 
     function couponFrequency() external view returns (uint256) {
-        return terms.couponInterval == 0 ? 0 : YEAR / terms.couponInterval;
+        return terms.couponInterval == 0 ? 0 : yearLength / terms.couponInterval;
     }
 
     /// @notice Actual/actual.

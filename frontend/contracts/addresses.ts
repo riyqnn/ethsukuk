@@ -1,12 +1,12 @@
 export const SEPOLIA_CHAIN_ID = 11155111;
 
 /** Block the certificate was deployed in; lower bound for event queries. */
-export const DEPLOY_BLOCK = 11777704n;
+export const DEPLOY_BLOCK = 11884017n;
 
 export const CONTRACTS = {
-  idrx: "0x26071A9337090447C167A68A6a28057Eb1eDD570" as const,
-  certificate: "0x23649979067622de18B47bcE250864865fFb7296" as const,
-  registry: "0x27739678f24307Cf9fD47EE1239A5A3fEd9381f3" as const,
+  idrx: "0x6D5f64e820Dd2342F1D08aF439A2902793869e74" as const,
+  certificate: "0x185e3524Ea9A638122a7d3A6104aCD9112Fce3F7" as const,
+  registry: "0x016160DE3042C61Db79f1A8af9b317689289fD5b" as const,
 } as const;
 
 export const ADDRESSES = {
