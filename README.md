@@ -13,20 +13,59 @@
 
 ---
 
-## Overview
+> **TL;DR:** A Sukuk is an Islamic bond: investors co-own a real project and share its profit
+> instead of earning interest. This project runs the whole Sukuk lifecycle on Ethereum, from KYC
+> and subscription through profit sharing to redemption, settled in a Rupiah stablecoin (IDRX)
+> and overseen by an auditor multisig. Every rupiah can be traced on-chain.
 
-A **Sukuk** is a Shariah-compliant certificate of ownership in a real-world asset or project. Holders
-earn a share of the project's profit, not interest. Sukuk puts the full lifecycle of one Sukuk
-issue on-chain:
+## Contents
 
-1. Investors pass a **KYC gate** and subscribe with **IDRX** (Rupiah stablecoin).
-2. They receive an on-chain **bond certificate**.
-3. The principal funds a real-world project through a **Gnosis Safe** treasury.
-4. **Profit is shared** every period and claimed per holder.
-5. After maturity, the **principal is redeemed** asynchronously.
+[Problem](#the-problem) · [Solution](#our-solution) · [How It Works](#how-it-works) ·
+[Features](#features) · [Standards](#standards) · [Architecture](#architecture) ·
+[Getting Started](#getting-started) · [Deployed Contracts](#deployed-contracts-sepolia) ·
+[Roadmap](#roadmap)
 
-Every state change is public, every gate is enforced by role, and the critical transitions are
-controlled by an independent auditor multisig.
+## The Problem
+
+Sukuk is one of the core instruments of Islamic finance. Governments and companies use it to fund
+roads, schools, and green projects, and Indonesia regularly offers retail Sukuk to its citizens.
+But the way Sukuk is issued and held today has real gaps:
+
+| Pain point | What it means for people |
+|---|---|
+| **Opaque use of funds** | Investors are told their money funds a project, but can't verify where the principal sits or whether reported profit matches the stated rate. |
+| **Many intermediaries** | Issuers, distribution partners, custodians, and registrars each keep their own records. Settlement is slow, and every layer adds cost. |
+| **Rigid access** | Fixed subscription windows, minimum ticket sizes, and paperwork keep younger and underbanked investors out. |
+| **Manual compliance** | KYC and transfer restrictions are enforced by back offices, not by the instrument itself. |
+| **Shariah trust gap** | Compliance depends on trusting off-chain reports. There is no shared, tamper-proof record that profit, not interest, was paid. |
+
+## Our Solution
+
+**Sukuk turns the certificate itself into the source of truth.** The rules of the issue live in
+a smart contract that anyone can read, and no single party can bend them.
+
+| Problem | How Sukuk solves it |
+|---|---|
+| Opaque use of funds | Principal moves only through on-chain calls into a **Gnosis Safe treasury**. Balances, allocations, and returns are public. |
+| Many intermediaries | One contract is the registry, the custodian ledger, and the payment rail. Subscription mints the certificate instantly, and profit is claimable the moment it is funded. |
+| Rigid access | Connect a wallet, complete KYC in one transaction, and subscribe in **IDRX**, a Rupiah stablecoin, in multiples of the denomination. |
+| Manual compliance | **ERC-3643** transfer rules: the token refuses to move to any wallet that is not verified. |
+| Shariah trust gap | Profit sits in a separate pool, is never compounded into the principal, and the expected payout per period is published on-chain for the **auditor multisig** to reconcile. |
+
+## How It Works
+
+```
+ Connect wallet ─▶ Self-KYC ─▶ Subscribe (IDRX) ─▶ Hold certificate ─▶ Claim profit each period ─▶ Redeem at maturity
+```
+
+1. **Verify.** The investor connects a wallet and registers in the on-chain KYC registry.
+2. **Subscribe.** The investor deposits IDRX and receives certificates 1:1, each one representing one unit of principal.
+3. **Fund the project.** Once the **auditor Safe** closes the subscription, the principal moves to the treasury Safe that finances the real-world project.
+4. **Share profit.** Every period the issuer funds the profit pool, and each holder claims their own share.
+5. **Redeem.** At maturity the principal returns, the auditor Safe opens redemption, and investors request, receive settlement, and claim their IDRX back.
+
+Every step is a public transaction, and every gate is enforced by role. The two critical transitions
+belong to an independent multisig, not the issuer.
 
 ## Features
 
@@ -181,6 +220,37 @@ Open [http://localhost:3000](http://localhost:3000). After a fresh deployment, u
 - `MockIDRX` is for testnet only. Set `IDRX_ADDRESS` to use the real token.
 
 > ⚠️ This code has not been professionally audited. Do not use it with real funds.
+
+## Who It's For
+
+- **Retail investors** who want Shariah-compliant yield with a small ticket and full visibility.
+- **Issuers** (governments, BUMN, corporates, Islamic banks) that want faster, cheaper issuance with built-in compliance.
+- **Auditors and Shariah boards** who need a tamper-proof record instead of periodic reports.
+- **Regulators** who can watch the registry, the treasury, and every payout in real time.
+
+## Current Limitations
+
+This is a hackathon prototype on a testnet. We are explicit about what is simplified:
+
+- **KYC is self-attested.** `selfRegister` lets a wallet register itself so the demo can be tried
+  end to end. A production deployment would replace this with a licensed KYC provider issuing
+  ONCHAINID claims. The registry already follows the ERC-3643 interface, so it can be swapped in
+  without touching the certificate.
+- **IDRX is mocked.** `MockIDRX` stands in for the real IDRX token on Sepolia.
+- **Profit is reported, not proven.** The contract publishes what each period should pay. Checking
+  that against the project's real earnings is still an off-chain job for the auditor Safe.
+
+## Roadmap
+
+- [x] Certificate combining ERC-7092, ERC-4626, ERC-7540, and ERC-3643
+- [x] Auditor and treasury Gnosis Safes gating the lifecycle
+- [x] Role-based dashboard for investors, issuer, auditor, and compliance
+- [x] Self-service KYC on connect
+- [ ] Integrate a licensed KYC provider (ONCHAINID claims)
+- [ ] Switch to the official IDRX token
+- [ ] Compliant secondary market between verified holders
+- [ ] On-chain project reporting and proof of profit from the treasury
+- [ ] Independent smart contract audit, then mainnet / L2 deployment
 
 ## Tech Stack
 
