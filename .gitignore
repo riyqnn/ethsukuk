@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.pnp
+.pnp.*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+*.env
+
+# Next.js & Build outputs
+.next/
+**/out/
+**/build/
+**/dist/
+*.tsbuildinfo
+
+# Hardhat & Foundry contract artifacts
+artifacts/
+cache/
+typechain-types/
+broadcast/
+**/artifacts/
+**/cache/
+**/typechain-types/
+
+# Logs & Debug
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# System & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.vercel
+
+# Local tooling (code index, per-user agent settings)
+.codegraph/
+.claude/settings.local.json
+
+# Test coverage & keys
+coverage/
+coverage.json
+*.pem

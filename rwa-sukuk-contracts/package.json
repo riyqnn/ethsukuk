@@ -1,0 +1,32 @@
+{
+  "name": "rwa-sukuk-contracts",
+  "version": "1.0.0",
+  "description": "RWA Tokenized Sukuk \u2014 ERC-4626 yield-bearing vault with role-based access control and linear state machine",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:lifecycle": "hardhat test test/SukukVault.lifecycle.test.ts",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "deploy:arbitrumSepolia": "hardhat run scripts/deploy.ts --network arbitrumSepolia",
+    "deploy:polygonAmoy": "hardhat run scripts/deploy.ts --network polygonAmoy",
+    "seed:sepolia": "hardhat run scripts/seed-testnet.ts --network sepolia",
+    "deploy:certificate:sepolia": "hardhat run scripts/deploy-certificate.ts --network sepolia",
+    "test:certificate": "hardhat test test/SukukCertificate.test.ts",
+    "seed:certificate:sepolia": "hardhat run scripts/seed-certificate.ts --network sepolia"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.11",
+    "@types/chai": "^4.3.16",
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^20.14.9",
+    "chai": "^4.4.1",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2"
+  }
+}
