@@ -180,7 +180,7 @@ export function AnimatedNumber({
 
   return (
     <motion.span className="figure" onViewportEnter={run} viewport={{ amount: 0.4 }}>
-      {display.toLocaleString("en-US", {
+      {display.toLocaleString("id-ID", {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
       })}

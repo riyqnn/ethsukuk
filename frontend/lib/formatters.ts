@@ -21,9 +21,27 @@ export function formatTokenAmount(amount: bigint | undefined): string {
   return formatUnits(amount ?? 0n, TOKEN_DECIMALS);
 }
 
+/**
+ * Canonical amount ("1000.5") -> Indonesian grouping for an input ("1.000,5").
+ * The value kept in state stays canonical so `parseTokenAmount` is unchanged.
+ */
+export function formatAmountInput(raw: string): string {
+  const [whole, frac] = raw.split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return frac === undefined ? grouped : `${grouped},${frac}`;
+}
+
+/** What the user typed ("1.000,5") -> canonical amount ("1000.5"). Drops anything else. */
+export function normalizeAmountInput(text: string): string {
+  const [whole, ...rest] = text.replace(/[^\d,]/g, "").split(",");
+  const frac = rest.join("").slice(0, TOKEN_DECIMALS);
+  const w = whole.replace(/^0+(?=\d)/, "");
+  return rest.length ? `${w || "0"}.${frac}` : w;
+}
+
 export function formatIDRX(amount: bigint | number | string): string {
   const num = typeof amount === "bigint" ? toDisplayNumber(amount) : Number(amount);
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("id-ID", {
     maximumFractionDigits: 2,
     minimumFractionDigits: 2,
   }).format(num);

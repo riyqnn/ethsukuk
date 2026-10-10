@@ -305,7 +305,6 @@ export default function SukukPage() {
                             onChange={setAmount}
                             hint={`Wallet ${formatIDRX(me.idrxBalance)} IDRX`}
                             onFill={() => setAmount(formatTokenAmount(me.idrxBalance))}
-                            step={formatTokenAmount(terms.denomination)}
                           />
                           <p className="rounded-xl bg-mist px-4 py-3 text-[13px] text-muted-foreground">
                             Multiples of <span className="figure text-ink">{formatIDRX(terms.denomination)} IDRX</span> only.

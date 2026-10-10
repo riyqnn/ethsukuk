@@ -1,15 +1,19 @@
-/** Numeric amount input with a unit and an optional one-tap fill. */
+import { formatAmountInput, normalizeAmountInput } from "@/lib/formatters";
+
+/**
+ * Amount input with a unit and an optional one-tap fill. Shows Indonesian grouping ("1.000,5")
+ * while `value`/`onChange` stay canonical ("1000.5").
+ */
 export function Field({
   id,
   label,
   value,
   onChange,
-  placeholder = "0.00",
+  placeholder = "0",
   unit,
   hint,
   onFill,
   fillLabel = "Max",
-  step = "any",
 }: {
   id: string;
   label: string;
@@ -20,7 +24,6 @@ export function Field({
   hint?: React.ReactNode;
   onFill?: () => void;
   fillLabel?: string;
-  step?: string;
 }) {
   return (
     <div>
@@ -33,12 +36,11 @@ export function Field({
       <div className="relative">
         <input
           id={id}
-          type="number"
+          type="text"
           inputMode="decimal"
-          min="0"
-          step={step}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          autoComplete="off"
+          value={formatAmountInput(value)}
+          onChange={(e) => onChange(normalizeAmountInput(e.target.value))}
           placeholder={placeholder}
           className={`field ${unit ? "pr-28" : ""}`}
         />
