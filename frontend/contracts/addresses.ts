@@ -6,7 +6,7 @@ export const DEPLOY_BLOCK = 11777704n;
 export const CONTRACTS = {
   idrx: "0x26071A9337090447C167A68A6a28057Eb1eDD570" as const,
   certificate: "0x23649979067622de18B47bcE250864865fFb7296" as const,
-  registry: "0xE6f6A2FdA52BAB7018f5a0Ab7Fce5ed1b68508D8" as const,
+  registry: "0x27739678f24307Cf9fD47EE1239A5A3fEd9381f3" as const,
 } as const;
 
 export const ADDRESSES = {

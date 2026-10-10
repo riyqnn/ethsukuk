@@ -207,6 +207,7 @@ export function useInvestorCount() {
 export function useInvestorActions() {
   const write = useMinedWrite();
   return {
+    selfRegister: (country: number) => write({ ...registry, functionName: "selfRegister", args: [country] }),
     approveIDRX: (amount: bigint) =>
       write({ ...idrx, functionName: "approve", args: [CONTRACTS.certificate, amount] }),
     deposit: (assets: bigint, receiver: `0x${string}`) =>

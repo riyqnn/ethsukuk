@@ -512,6 +512,19 @@
           "internalType": "uint16",
           "name": "country",
           "type": "uint16"
+        }
+      ],
+      "name": "selfRegister",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint16",
+          "name": "country",
+          "type": "uint16"
         },
         {
           "internalType": "bool",

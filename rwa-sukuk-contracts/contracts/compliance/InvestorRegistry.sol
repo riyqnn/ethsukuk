@@ -6,8 +6,8 @@ import {IInvestorRegistry} from "../interfaces/IInvestorRegistry.sol";
 
 /**
  * @title InvestorRegistry
- * @notice KYC gate for the Sukuk issue: a wallet may only hold the certificate once an agent has
- *         registered it here.
+ * @notice KYC gate for the Sukuk issue: a wallet may only hold the certificate once it is
+ *         registered here, either by an agent or by the investor through `selfRegister`.
  * @dev Reduced ERC-3643 identity registry. A full T-REX deployment derives `isVerified` from claims
  *      held on an ONCHAINID and signed by a trusted issuer; here an agent asserts the result of the
  *      off-chain KYC directly. The interface matches ERC-3643, so swapping in a T-REX registry later
@@ -16,6 +16,8 @@ import {IInvestorRegistry} from "../interfaces/IInvestorRegistry.sol";
  *      Roles:
  *      - DEFAULT_ADMIN_ROLE manages agents and country restrictions.
  *      - AGENT_ROLE registers, updates and removes investors.
+ *      - Any wallet may register itself once with `selfRegister`. Agents can still remove it, and
+ *        blocked countries still fail `isVerified`.
  */
 contract InvestorRegistry is IInvestorRegistry, AccessControl {
     bytes32 public constant AGENT_ROLE = keccak256("AGENT_ROLE");
@@ -67,6 +69,15 @@ contract InvestorRegistry is IInvestorRegistry, AccessControl {
     }
 
     // ------------------------------------------------------------------
+    // Investor actions
+    // ------------------------------------------------------------------
+
+    /// @notice Registers the caller's own wallet. No ONCHAINID is recorded.
+    function selfRegister(uint16 country) external {
+        _register(msg.sender, address(0), country);
+    }
+
+    // ------------------------------------------------------------------
     // Agent actions
     // ------------------------------------------------------------------
 
@@ -74,6 +85,10 @@ contract InvestorRegistry is IInvestorRegistry, AccessControl {
         public
         onlyRole(AGENT_ROLE)
     {
+        _register(investor, onchainId, country);
+    }
+
+    function _register(address investor, address onchainId, uint16 country) private {
         if (investor == address(0)) revert ZeroAddress();
         if (_identities[investor].registered) revert AlreadyRegistered(investor);
 

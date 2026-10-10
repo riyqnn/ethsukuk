@@ -40,6 +40,9 @@ const PHASES = [
 
 type Tab = "subscribe" | "coupon" | "redeem";
 
+/** ISO-3166 numeric code recorded for self-registered wallets. */
+const INDONESIA = 360;
+
 export default function SukukPage() {
   const { address, isConnected } = useAccount();
   const issue = useIssue();
@@ -261,9 +264,20 @@ export default function SukukPage() {
                         <ShieldAlert className="h-4 w-4" aria-hidden="true" /> Wallet not KYC verified
                       </p>
                       <p className="mt-2 leading-relaxed">
-                        The certificate follows ERC-3643, so only wallets registered by the compliance agent can hold it.
-                        Ask the agent to register {address ? compactAddress(address) : "this wallet"}.
+                        The certificate follows ERC-3643, so only registered wallets can hold it. Register{" "}
+                        {address ? compactAddress(address) : "this wallet"} to subscribe.
                       </p>
+                      <Press className="mt-4 w-full">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => run(() => actions.selfRegister(INDONESIA))}
+                          className="btn btn-primary w-full"
+                        >
+                          {busy ? "Waiting for wallet…" : "Complete KYC"}
+                        </button>
+                      </Press>
+                      <TxNotice status={tx.status} hash={tx.hash} error={tx.error} />
                     </motion.div>
                   ) : me.walletFrozen ? (
                     <motion.div key="frozen" {...fade} className="rounded-2xl bg-amber-soft px-5 py-6 text-[13px] text-amber">

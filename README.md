@@ -1,6 +1,6 @@
 <div align="center">
 
-# EthSukuk
+# Sukuk
 
 **Tokenized Islamic bonds on Ethereum: KYC-gated, Safe-audited, profit-sharing, redeemable.**
 
@@ -16,7 +16,7 @@
 ## Overview
 
 A **Sukuk** is a Shariah-compliant certificate of ownership in a real-world asset or project. Holders
-earn a share of the project's profit, not interest. EthSukuk puts the full lifecycle of one Sukuk
+earn a share of the project's profit, not interest. Sukuk puts the full lifecycle of one Sukuk
 issue on-chain:
 
 1. Investors pass a **KYC gate** and subscribe with **IDRX** (Rupiah stablecoin).
@@ -31,7 +31,8 @@ controlled by an independent auditor multisig.
 ## Features
 
 - **Compliant by construction:** only KYC-registered wallets can hold or receive the certificate.
-  The agent role can freeze, force-transfer, and recover wallets.
+  Investors complete KYC themselves right after connecting a wallet; the agent role can still
+  remove, freeze, force-transfer, and recover wallets.
 - **Real bond semantics:** ISIN, denomination, issue volume, profit rate, issue and maturity dates
   are all readable on-chain.
 - **Donation-proof accounting:** principal is tracked internally, so sending tokens directly
@@ -45,7 +46,7 @@ controlled by an independent auditor multisig.
 
 ## Standards
 
-| Standard | Role in EthSukuk |
+| Standard | Role in Sukuk |
 |---|---|
 | **ERC-7092** | The certificate *is* the bond: ISIN, denomination, profit rate, maturity, `principalOf`. |
 | **ERC-4626** | Accounting. 1 certificate = 1 unit of principal, held at 1:1 for the life of the issue. |
@@ -59,7 +60,8 @@ controlled by an independent auditor multisig.
 flowchart LR
     Investor([Investor]) -- deposit IDRX --> Cert[SukukCertificate]
     Cert -- checks every transfer --> Reg[InvestorRegistry]
-    Agent([Compliance Agent]) -- register / freeze --> Reg
+    Investor -- self-KYC --> Reg
+    Agent([Compliance Agent]) -- remove / freeze --> Reg
     Protocol([Protocol Admin]) -- open issue / fund profit / settle --> Cert
     Auditor([Auditor Safe]) -- close subscription / open redemption --> Cert
     Cert -- allocate principal --> Treasury[(Treasury Safe)]
@@ -76,7 +78,7 @@ Subscription ──▶ Active ──▶ Matured ──▶ Redeeming ──▶ Cl
 
 | # | Who | Action |
 |---|---|---|
-| 1 | Compliance agent | `registerIdentity(investor, onchainId, country)` |
+| 1 | Investor (or agent) | `selfRegister(country)` · agent: `registerIdentity(investor, onchainId, country)` |
 | 2 | Protocol | `openIssue(quota, denomination, tenor, couponRate, couponInterval)` |
 | 3 | Investor | `deposit(assets, receiver)` |
 | 4 | **Auditor Safe** | `closeSubscription()` → **Active**, tenor starts |
@@ -111,7 +113,7 @@ Subscription ──▶ Active ──▶ Matured ──▶ Redeeming ──▶ Cl
 
 | Page | For | What it does |
 |---|---|---|
-| `/sukuk` | Investors | Issue terms, current phase, subscribe, claim profit, redeem |
+| `/sukuk` | Investors | Self-KYC, issue terms, current phase, subscribe, claim profit, redeem |
 | `/portfolio` | Investors | Your position and allocation |
 | `/transactions` | Everyone | Full on-chain event ledger, filterable by wallet |
 | `/protocol` | Everyone | How the contracts are wired, every call in order, deployed addresses |
@@ -164,7 +166,7 @@ Open [http://localhost:3000](http://localhost:3000). After a fresh deployment, u
 | Contract | Address |
 |---|---|
 | SukukCertificate | [`0x23649979067622de18B47bcE250864865fFb7296`](https://sepolia.etherscan.io/address/0x23649979067622de18B47bcE250864865fFb7296) |
-| InvestorRegistry | [`0xE6f6A2FdA52BAB7018f5a0Ab7Fce5ed1b68508D8`](https://sepolia.etherscan.io/address/0xE6f6A2FdA52BAB7018f5a0Ab7Fce5ed1b68508D8) |
+| InvestorRegistry | [`0x27739678f24307Cf9fD47EE1239A5A3fEd9381f3`](https://sepolia.etherscan.io/address/0x27739678f24307Cf9fD47EE1239A5A3fEd9381f3) |
 | MockIDRX | [`0x26071A9337090447C167A68A6a28057Eb1eDD570`](https://sepolia.etherscan.io/address/0x26071A9337090447C167A68A6a28057Eb1eDD570) |
 | Auditor / Treasury Safe | [`0x411E4A576d3cA579e8795559875D1F0684452801`](https://sepolia.etherscan.io/address/0x411E4A576d3cA579e8795559875D1F0684452801) |
 

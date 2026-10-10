@@ -37,7 +37,8 @@ Gnosis Safe, profit is shared every period, and the principal is redeemed after 
 - `AUDITOR_ROLE` — a Gnosis Safe: `closeSubscription()` and `openRedemption()`. The role
   administers itself, so `PROTOCOL_ROLE` cannot grant it to its own key.
 - `AGENT_ROLE` — the compliance desk: registers investors, freezes, forces transfers, recovers.
-- Investors need no role beyond being registered: `deposit`, `claimCoupon`, `requestRedeem`, `redeem`.
+- Investors need no role beyond being registered, which they can do themselves with
+  `selfRegister(country)`: `deposit`, `claimCoupon`, `requestRedeem`, `redeem`.
 
 ## Lifecycle (forward only)
 
@@ -47,7 +48,7 @@ Subscription → Active → Matured → Redeeming → Closed
 
 | Step | Caller | Call |
 |---|---|---|
-| 1 | Agent | `registerIdentity(investor, onchainId, country)` |
+| 1 | Investor or Agent | `selfRegister(country)` or `registerIdentity(investor, onchainId, country)` |
 | 2 | Protocol | `openIssue(quota, denomination, tenor, couponRate, couponInterval)` |
 | 3 | Investor | `deposit(assets, receiver)` |
 | 4 | Auditor Safe | `closeSubscription()` → Active, starts the tenor |
@@ -82,7 +83,7 @@ cp .env.example .env   # PRIVATE_KEY, RPC URLs, AUDITOR_MULTISIG, issue terms
 
 ```bash
 npx hardhat compile
-npx hardhat test                # 72 tests
+npx hardhat test                # full suite
 npm run test:certificate        # the certificate suite only
 ```
 

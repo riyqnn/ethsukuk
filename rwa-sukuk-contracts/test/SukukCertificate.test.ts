@@ -77,6 +77,24 @@ describe("SukukCertificate — KYC gate (ERC-3643)", () => {
       .withArgs(outsider.address);
   });
 
+  it("lets a wallet register itself and then subscribe", async () => {
+    const { cert, idrx, registry, outsider } = await loadFixture(deployFixture);
+    await cert.openIssue(QUOTA, DENOM, TENOR, RATE, INTERVAL);
+
+    await idrx.mint(outsider.address, E("100"));
+    await idrx.connect(outsider).approve(await cert.getAddress(), ethers.MaxUint256);
+
+    await expect(registry.connect(outsider).selfRegister(ID))
+      .to.emit(registry, "IdentityRegistered")
+      .withArgs(outsider.address, ethers.ZeroAddress, ID);
+    await expect(registry.connect(outsider).selfRegister(ID))
+      .to.be.revertedWithCustomError(registry, "AlreadyRegistered")
+      .withArgs(outsider.address);
+
+    await cert.connect(outsider).deposit(E("100"), outsider.address);
+    expect(await cert.balanceOf(outsider.address)).to.equal(E("100"));
+  });
+
   it("lets a verified wallet in and out again once the agent removes it", async () => {
     const { cert, registry, alice, bob } = await subscribed();
 
